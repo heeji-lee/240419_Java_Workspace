@@ -41,6 +41,4 @@ public class Person {
 		return "Person [name=" + name + ", contact=" + contact + ", regDate=" + regDate + "]";
 	}
 	
-	
-
 }

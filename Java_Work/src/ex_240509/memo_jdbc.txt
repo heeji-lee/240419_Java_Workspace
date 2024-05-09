@@ -1,0 +1,1389 @@
+[자바 커피 정리]
+준비물,
+1. 자바 jdk, 수업 때 다 설정. 
+2. IDE, 이클립스 
+3. 드라이버, 오라클 드라이버, ojdbc8_g.jar 파일이 필요함. 
+4. SQL 디벨로퍼 필요, DBeaver, 등 , 기본 유저정보,패스워드, 권한등 
+
+
+14 장  JDBC (Java DataBase Connectivity)
+
+JDBC는 자바 언어에서 데이터베이스에 접근 할수 있는 프로그래밍 
+ API이다. SQL*PLUS 툴을 이용해서 SQL 문을 요청 했던 것처럼 자바 언어에서 
+ JDBC 를 이용해서 SQL문을 데이터 베이스에 요청 할수 있다. 
+ 
+ 1.1 JDBC  실행 전 고려사항 
+ 
+ 다음은 JDBC를 사용하기 위해서 반드시 고려해야 할 사항이다. 
+ 
+(1) 데이터베이스 정보 확인 
+데이터베이스가 설치된 IP 정보 및 설정된 데이터베이스명을 반드시 알아야 한다. 
+다음은 DBA로 접속하여 설정된 데이터베이스명을 확인하는 방법이다.
+
+ex)
+SQL > show paramerter db_name;
+
+ex) Linux  나
+SQL> show parameter db_name
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+db_name                              string      orcl
+
+(2)  오라클 데이터베이스의 2가지 실행 여부 확인 
+윈도우즈 버전. 
+제어판 - 관리도구 - 서비스 에서 
+ex)
+1)OracleOraDb11g_home1TNSListener
+2)OracleServiceORCL 
+확인. 
+
+(3) 오라클 드라이버를 클래스 패스에 설정 
+JDBC 는 대부분이 인터페이스로 되어 있으며 이 인터페이스를  구현한 
+클래스 파일들의 묶음을 드라이버(  driver)라고 한다. 
+JDBC는 자바에서 제공하고, 드라이버는 데이터베이스를 만드는 회사(벤더)에서 
+제공한다. 오라클에서 만든 드라이버를 '오라클 드라이버'라고 한다. 
+ 
+자바에서 서로 다른 데이터베이스를 접속하기 위한 일관된 방식을 위해서 
+인터페이스로 만들고 각 벤더에서는 실제 접속 방법을 구현한 클래스 파일을 
+제공하는 형태이다. 따라서 벤더에서 제공한 데이터베이스의 드라이버를 
+반드시 사용해야 하기 때문에, 이들 드라이버 파일이 클래스 패스에 설정 
+되어 있어야한다. 
+ 
+오라클 드라이버는 오라클 데이터베이스를 설치하면 다음 경로에 자동
+생성된다. 
+윈도우즈 
+ex) 11.2.0 경우 
+C:\app\사용자명\product\11.2.0\dbhome_1\jdbc\lib 
+ 
+리눅스
+ex)  12.2.0 설치 경로에 따라 조금씩 다름. 
+/opt/oracle12/app/product/12.2.0/dbhome_1/jdbc/lib
+ 
+다음과 같이 lib 폴더 안에 저장된 많은 압축 파일들이 모두 오라클 드라이버이다. 
+이렇게 드라이버 파일의 종류가 많은 이유는 각 드라이버 파일이 제공하는 기능상의 
+차이이다. 이중에서 "ojdbc8_g.jar " 파일을 사용 .
+
+나는 
+ex)
+"ojdbc8_g.jar " 파일을 사용 .
+
+사용하고자 하는 오라클 드라이버를 이클립스에서 
+클래스 패스에 설정하는 방법.
+
+ex)
+Window - Preferences 를 선택 .
+
+[Java]->[Build Path]-[ClassPath Variables]에서 
+JRE_LIB의 경로를 파악한다. 
+나의 환경에서 
+C:\Program Files\Java\jdk-11.0.2\lib
+ 
+이 경로에 있는 'ext' 폴더에  "ojdbc8_g.jar " 파일을 복사하면 
+자동으로 압축 파일이 클래스 패스에 추가된다. 
+이 방법은 확장 폴더인 'ext' 폴더를 이용해서 앞축 파일을 클래스 패스에 
+설정하는 방법이다. 
+
+JDBC 연결을 위한 환경설정이 모두 끝났으면 자바 코드로 데이터베이스를 
+연동할수 있다. 대부분의 데이터베이스 연동 코드가 일정한 패턴으로 구현하기 
+때문에 설명하는 순서대로 코드 작업을 하면 무리 없이 데이터베이스를 연동할수있다. 
+
+==========================================================================
+======================================================================
+드라이버 연결 방법. 이클립스 
+이클립스 -> 프로젝트 우클릭 -> Build path -> configure build path 
+-> 3탭 라이브러리 에서 -> 모듈 선택 -> 오른쪽 메뉴, add external jar ->
+ojdbc8_g.jar 선택. -> 결과 확익, -> Referrenced Libraries 에서 확인됨. 
+======================================================================
+
+
+1.2 JDBC  실행순서 정리 
+
+다음은 JDBC를 사용하여 기본적인 프로그램을 개발하는 순서.
+
+1. 오라클 데이터베이스 연동을 위한 4가지 정보를 문자열에 저장한다. 
+
+ex) 윈도우즈 교재 예제 
+String driver = "oracle.jdbc.driver.OracleDriver";
+String url = "jdbc:oracle:thin:@localhost:1521:orcl";
+String userid = "scott";
+String passwd = "tiger";
+
+나 
+String driver = "oracle.jdbc.driver.OracleDriver";
+String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+String userid = "hr2";
+String passwd = "1234";
+!
+
+드라이버(압축 파일) 내에 핵심이 되는 클래스 파일이 있다. 
+이 클래스 파일은 oracle.jdbc.driver 패키지 내에 있는 OracleDriver 클래스이다. 
+이 값을 String 변수인 driver에 저장한다. 오라클의 위치 및 포트 번호, 데이터베이스명 
+의 정보를 String 변수인 url에 저장한다. 
+
+오라클의 기본 포트 번호는 1521 번이고 데이터베이스 위치는 현재 로컬 컴퓨터에 
+설치 했기 때문에 localhost 라고 지정한다. 만약 오라클 데이터베이스가 원격에 
+있다면 반드시 원격 IP 주소를 지정한다. 데이터베이스명은 기본적으로 orcl 이다. 
+마지막으로 접속 하고자 하는 계정명과 비밀번호를 userid 변수와 passwd 변수에 
+저장한다. 
+
+
+2. 드라이버 로딩 
+앞에서 살펴보았던 OracleDriver 클래스를 메모리에 올려야 하는데 
+다음과 같은 방법으로 클래스 파일을 메모리에 로딩한다. 
+
+ex)
+Class.forName(driver);
+
+3. Connection 맺기 
+자바 코드와 오라클 데이터베이스를 연결하는 것을 의미한다. 
+연결은 java.sql 패키지의 Connection 클래스를 사용한다. 다음과 같이 
+DriverManager  클래스를 이용해서 Connection을 구한다. 
+
+ex)
+Connection con = DriverManager.getConnection(url, userid, passwd);
+
+getConnection 메소드 인자에 앞에서 저장했던 url과 userid 그리고 passwd 값을 
+지정하면, 이 정보를 이용해서 데이터베이스에 연결한다. 
+
+4. SQL 문 작성 
+자바에서 데이터베이스에 요청할 SQL 은 문자열로 저장한다. 
+SQL*PLUS 툴에서의 요청과 같다. 주의할 점은 ';' 세미콜론은 입력하지 않는다. 
+
+dept 테이블의 데이터를 검색하기 위한 SQL문은 다음과 같다. 
+
+ex) 
+String query = "SELECT deptno,dname,loc FROM dept";
+
+
+5. PreparedStatement 생성 
+요청할 SQL 문을 데이터베이스에 전송할 때 사용되는 API 이다. 다음과 같이 
+Connection을 사용해서 PreparedStatement를 생성한다. 
+
+ex) 
+PreparedStatement pstmt = con.prepareStatement(query);
+
+Connection 객체의 prepareStatement() 메소드를 이용해서 PreparedStatement 객체 
+를 생성할수 있다. 
+
+다음은 dept 테이블의 데이터 중에서 deptno 가 40 인 레코드를 삭제하는 SQL 문이다 .
+
+ex)
+String delete = "DELETE FROM dept WHERE deptno = 40";
+
+6. SQL 문 전송 및 결과값 얻기 
+SQL 문 전송은 PreparedStatement 객체를 이용해서 데이터베이스에 전송한다. 
+요청하는 SQL 문에 따라서 다음과 같이 2가지 메소드를 사용할수 있다.
+
+
+DML 요청 (INSERT, DELETE, UPDATE)
+DML 요청은 executeUpdate() 메소드를 사용한다. 
+
+ex) 
+int n = pstmt.executeUpdate();
+
+SQL*PLUS 툴에서 DML 을 요청하면 항상 적용된 레코드의 개수가 다음과 같이
+출력된다. 
+
+따라서 executeUpdate() 메소드의 리턴되는 정수값은 변경된 레코드의 개수이다. 
+DELETE 문을 요청했을 때 리턴되는 정수값이 10이라면 삭제된 레코드 개수가 10개라 
+는 것이다. 반환된 값이 저장되는 변수 n의 값을 이용해서 적용된 레코드의 개수를 파악 
+할수 있다. 
+
+또한, JDBC 의 DML 처리는 기본적으로 자동 커밋 (auto commit )
+이 발생한다. 따라서  JDBC를 이용하여 SQL 문을 수행한 후에는 
+ROLLBACK 처리가 불가능하다. 
+
+SELECT 요청 
+SELECT 요청은 executeQuery() 메소드를 사용한다. 
+
+ex) 
+ResultSet rs = pstmt.execuQuery(); 
+SQL*PLUS 툴에서 SELECT 문을 실행하면 항상 테이블 형태로 다음과 
+같이 결과가 출력된다. 
+
+앞의  SELECT 문의 실행 결과에서 테이블 형식의 결과를 자바의 객체로 표현한 것이 
+ResultSet 객체이다. ResultSet 객체를 이용해서 원하는 데이터를 얻을 수 있다. 
+객체를 이용해서 레코드를 선택하고, 객체가 가리키는 레코드의 칼럼을 지정해서 
+데이터를 얻는다. 레코드를 선택하는 메소드는 next() 메소드를 사용하고 칼럼은 
+데이터형에 따라서 getInt("칼럼명"), getString("칼럼명") 메소드등을 사용할수 있다. 
+
+다음은 결과값인 ResultSet에서 데이터를 얻는 방법이다. 
+
+ex)
+while(rs.next()){
+int deptno = rs.getInt("deptno");
+String dname = rs.getString("dname");
+String loc = rs.getString("loc");
+System.out.println(deptno+" "+dname+ " "+loc);
+}
+
+결과값의 레코드가 여러 개 있을 수 있기 때문에 while 문을 사용하여 
+next() 메소드는 레코드가 있으면 true 값을 리턴하고, 레코드가 없으면 
+false 값을 리턴한다. 
+
+deptno 칼럼은 NUMBER 형이기 때문에  getInt() 메소드를 사용해서 데이터를 얻는다. 
+dname 칼럼은 VARCHAR2 형이기 때문에 getString() 메소드를 사용한다. 
+이때 칼럼명을 사용하거나 SELECT 문에서 사용한 칼럼의 인덱스 값을 사용할수도 있다. 
+가독성을 위해서 칼럼명을 사용할 것을 권장한다. 
+
+
+7 자원 반납
+파일 및 데이터베이스는 자바에서 사용하는 외부 자원이기 때문에 반드시 사용한 
+다음에는 자원을 해제해야 한다. 
+데이터베이스에서 사용한 자원은 ResultSet, Statement 또는 PreparedStatement,
+Connection 등이다. 이 자원을 해제시킬 때에는 사용한 역순으로 
+해제한다. 데이터베이스를 사용할 때 예외가 발생하거나 발생하지 않거나 항상 자원을 
+해제시켜야 하기 때문에 일반적으로 finally 문에서 자원 반납을 위한 코드를 구현한다. 
+
+다음과 같이 자원을 해제한다. 
+
+ex)
+rs.close(); // ResultSet 을 사용한 경우, 조회할 때만 사용함.
+pstmt.close();
+con.close(); 
+ 
+앞에서 설명한 각 단계를 잘 이해하고 숙지하면, 
+JDBC를 사용하는 프로그램 개발에 큰 어려움은 없음. 
+
+1.3 
+JDBC 실습하기 .
+
+실습하기 14-1
+레코드 검색하기 
+
+dept 테이블에 저장된 레코드를 검색하는 자바 프로그램 예제이다. 
+이클립스에서 새프젝트를 생성하고, 클래스를 추가.
+
+-프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_select_ex_1
+
+package ch14.JDBC;
+
+import java.sql.DriverManager; //public class DriverManager
+import java.sql.Connection; //public interface Connection  extends Wrapper, AutoCloseable {
+import java.sql.PreparedStatement; // public interface PreparedStatement extends Statement
+import java.sql.Statement; //public interface Statement extends Wrapper, AutoCloseable {
+import java.sql.ResultSet; //public interface Statement extends Wrapper, AutoCloseable {
+import java.sql.SQLException; // public class SQLException extends java.lang.Exception implements Iterable<Throwable> {
+
+public class JDBC_select_ex_1 {
+ public static void main(String[] args) {
+	 String driver = "oracle.jdbc.driver.OracleDriver";   // 12행 ~ 15행 데이터베이스 접속을 위한 4가지 정보를 String  변수에  저장.
+	 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+	 String userid = "hr2";
+	 String passwd = "1234";
+	 Connection con = null;
+	 PreparedStatement pstmt = null;
+	 ResultSet rs = null;
+	 try {
+		 Class.forName(driver);
+		 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+		 con = DriverManager.getConnection(url, userid, passwd); 
+		 // DriverManager 클래스의 getConnection() 메소드를 이용해서
+//		 Connection 객체를 얻는다. 
+		 String query = "SELECT deptno,dname,loc FROM dept";
+		 //요청할 SQL  문을 String 변수에 저장한다.
+		 pstmt =con.prepareStatement(query); 
+		 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+		 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻는다. 
+		 
+		 rs = pstmt.executeQuery(); 
+		 //SELECT 문을 요청하기 때문에 executeQuery()
+//		 메소드를 사용하며 결과는 ResultSet 객체로 받는다.
+		 while(rs.next()) {
+			 int deptno = rs.getInt("deptno");
+			 String dname = rs.getString("dname");
+			 String loc = rs.getString("loc");
+			 System.out.println(deptno + " " + dname + " " + loc);
+		 }
+	 }catch(Exception e) {
+		 e.printStackTrace();
+	 }finally {
+		 try {
+			 if (rs != null) rs.close();
+			 if (pstmt != null) pstmt.close();
+			 if ( con != null) con.close();
+		 }catch(SQLException e){
+			 e.printStackTrace();
+		 }
+	 }
+		 }
+	}
+
+
+//
+10 ACCOUNTING NEW YORK
+20 RESEARCH DALLAS
+30 SALES CHICAGO
+40 OPERATIONS BOSTON
+
+
+비교 
+SQL> select deptno,dname,loc from dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+ 
+ 
+ 실습하기 14-2
+ 레코드 저장하기
+ 
+dept 테이블에 새로운 레코드를 저장하는 자바 프로그램 예제 
+클래스 이름은 
+ 
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_insert_ex_1
+ 
+ 새로운 데이터의  deptno 값은 50, dname 값은 " 개발" , 
+ loc 값은 "서울"로 저장한다. 
+ 
+ package ch14.JDBC;
+
+import java.sql.DriverManager; //public class DriverManager
+import java.sql.Connection; //public interface Connection  extends Wrapper, AutoCloseable {
+import java.sql.PreparedStatement; // public interface PreparedStatement extends Statement
+import java.sql.SQLException; // public class SQLException extends java.lang.Exception implements Iterable<Throwable> {
+
+public class JDBC_insert_ex_1 {
+ public static void main(String[] args) {
+	 String driver = "oracle.jdbc.driver.OracleDriver";   // 10행 ~ 14행 데이터베이스 
+	 //접속을 위한 4가지 정보를 String  변수에  저장.
+	 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+	 String userid = "hr2";
+	 String passwd = "1234";
+	 Connection con = null;
+	 PreparedStatement pstmt = null;
+	 
+	 try {
+		 Class.forName(driver);
+		 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+		 con = DriverManager.getConnection(url, userid, passwd); 
+		 // DriverManager 클래스의 getConnection() 메소드를 이용해서
+//		 Connection 객체를 얻는다. 
+		 String sql = "INSERT INTO dept(deptno,dname,loc)" + "VALUES(?,?,?)";
+		 //요청할 SQL  문을 String 변수에 저장한다. 이때 저장할 데이터 대신에 '?' 
+		 //기호를 사용한다. 나중에 PreparedStatement 객체의 set()메소드를 
+		 //사용하여 값을 동적으로 설정한다. 
+		 pstmt = con.prepareStatement(sql);
+		 pstmt.setInt(1, 50);
+		 pstmt.setString(2, "개발");
+		 pstmt.setString(3, "서울");
+		 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+		 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻고 '?' 대신에 
+		 //설정할 값을 인덱스(1부터 시작) 를 사용하여 set() 메소드로 설정한다.
+	     int n = pstmt.executeUpdate();
+	     // INSERT 문을 요청하기 때문에 executeUpdate() 메소드를 
+	     //사용하며 결과는 int 형으로 저장한다. 
+	     System.out.println(n+"개의 레코드가 저장");
+	     // 반환된 정수값을 출력하면 SQL 문을 실행한 뒤에 데이터베이스에 적용된 
+	     // 레코드의 개수를 알수 있다. 
+			 }catch(Exception e) {
+		 e.printStackTrace();
+	 }finally {
+		 try {
+			  if (pstmt != null) pstmt.close();
+			 if ( con != null) con.close();
+			 //사용한 자원을 finally 문을 이용해서 반납한다. 
+			 // 자원 반납은 사용했던 객체의 역순으로 하며 모두 공통적으로 
+			 // close()  메소드를 사용한다. 
+		 }catch(SQLException e){
+			 e.printStackTrace();
+		 }
+	 }
+		 }
+	}
+//
+1개의 레코드가 저장
+
+SQL> select deptno,dname,loc from dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+        50 개발           서울
+		
+앞의 실습 파일을 실행해보면 새로 저장한 레코드까지 포함하여 출력됨을 
+확인할수 있다. 
+여러 번 실행하면 deptno 가 PRIMARY KEY 로 지정되었기 때문에 예외가 
+발생한다. 여러 번 실습하려면 deptno 칼럼의 값인 50을 중복되지 않는 
+값으로 변경한 뒤에 실습한다. 
+
+
+실습하기 14-3 
+레코드 수정하기 
+ 
+ 다음은 dept 테이블에 저장된 레코드를 수정하는 자바 프로그램 예제이다. 
+ 클래스 이름은 
+ 
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_update_ex_1
+ 
+수정할 데이터로 deptno  값이 50인 레코드의 dname 칼럼의 값을 
+'인사'로 변경하고, loc 칼럼의 값을 '부산'으로 변경한다. 
+
+자바 커피 JDBC 453 13/40
+
+package ch14.JDBC;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class JDBC_update_ex_1 {
+	public static void main(String[] args) {
+		 String driver = "oracle.jdbc.driver.OracleDriver";   // 10행 ~ 14행 데이터베이스 
+		 //접속을 위한 4가지 정보를 String  변수에  저장.
+		 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+		 String userid = "hr2";
+		 String passwd = "1234";
+		 Connection con = null;
+		 PreparedStatement pstmt = null;
+		 
+		 try {
+			 Class.forName(driver);
+			 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+			 con = DriverManager.getConnection(url, userid, passwd); 
+			 // DriverManager 클래스의 getConnection() 메소드를 이용해서
+//			 Connection 객체를 얻는다. 
+			 String sql = "UPDATE dept SET dname = ? , loc = ? WHERE deptno = ?";
+			 //요청할 SQL  문을 String 변수에 저장한다. 이때 저장할 데이터 대신에 '?' 
+			 //기호를 사용한다. 나중에 PreparedStatement 객체의 set()메소드를 
+			 //사용하여 값을 동적으로 설정한다. 
+			 pstmt = con.prepareStatement(sql);
+			 pstmt.setString(1, "인사");
+			 pstmt.setString(2, "부산");
+			 pstmt.setInt(3, 50);
+			 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+			 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻고 '?' 대신에 
+			 //설정할 값을 인덱스(1부터 시작) 를 사용하여 set() 메소드로 설정한다.
+		     int n = pstmt.executeUpdate();
+		     // UPDATE 문을 요청하기 때문에 executeUpdate() 메소드를 
+		     //사용하며 결과는 int 형으로 저장한다. 
+		     System.out.println(n+"개의 레코드가 수정");
+		     // 반환된 정수값을 출력하면 SQL 문을 실행한 뒤에 데이터베이스에 적용된 
+		     // 레코드의 개수를 알수 있다. 
+				 }catch(Exception e) {
+			 e.printStackTrace();
+		 }finally {
+			 try {
+				  if (pstmt != null) pstmt.close();
+				 if ( con != null) con.close();
+				 //사용한 자원을 finally 문을 이용해서 반납한다. 
+				 // 자원 반납은 사용했던 객체의 역순으로 하며 모두 공통적으로 
+				 // close()  메소드를 사용한다. 
+			 }catch(SQLException e){
+				 e.printStackTrace();
+			 }
+		 }
+			 }
+
+}
+//
+1개의 레코드가 수정
+
+SQL> select deptno,dname,loc from dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+        50 인사           부산
+
+실습하기 14-4
+레코드 삭제하기 
+ 
+ 다음은 dept 테이블에 저장된 레코드를 삭제하는 자바 프로그램 예제이다. 
+ 클래스 이름은 
+ 
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_delete_ex_1
+ 
+삭제할 데이터로 deptno  값이 50인 레코드를 삭제한다. 
+dept 테이블에 저장된 다른 레코드를 삭제할 때에는 emp 
+테이블에서 참조하기 때문에 에러가 발생한다. 
+
+package ch14.JDBC;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class JDBC_delete_ex_1 {
+	public static void main(String[] args) {
+		 String driver = "oracle.jdbc.driver.OracleDriver";   // 10행 ~ 14행 데이터베이스 
+		 //접속을 위한 4가지 정보를 String  변수에  저장.
+		 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+		 String userid = "hr2";
+		 String passwd = "1234";
+		 Connection con = null;
+		 PreparedStatement pstmt = null;
+		 
+		 try {
+			 Class.forName(driver);
+			 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+			 con = DriverManager.getConnection(url, userid, passwd); 
+			 // DriverManager 클래스의 getConnection() 메소드를 이용해서
+//			 Connection 객체를 얻는다. 
+			 String sql = "DELETE  FROM dept WHERE deptno = ?";
+			 //요청할 SQL  문을 String 변수에 저장한다. 이때 저장할 데이터 대신에 '?' 
+			 //기호를 사용한다. 나중에 PreparedStatement 객체의 set()메소드를 
+			 //사용하여 값을 동적으로 설정한다. 
+			 pstmt = con.prepareStatement(sql);
+			  pstmt.setInt(1, 50);
+			 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+			 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻고 '?' 대신에 
+			 //설정할 값을 인덱스(1부터 시작) 를 사용하여 set() 메소드로 설정한다.
+		     int n = pstmt.executeUpdate();
+		     // UPDATE 문을 요청하기 때문에 executeUpdate() 메소드를 
+		     //사용하며 결과는 int 형으로 저장한다. 
+		     System.out.println(n+"개의 레코드가 삭제");
+		     // 반환된 정수값을 출력하면 SQL 문을 실행한 뒤에 데이터베이스에 적용된 
+		     // 레코드의 개수를 알수 있다. 
+				 }catch(Exception e) {
+			 e.printStackTrace();
+		 }finally {
+			 try {
+				  if (pstmt != null) pstmt.close();
+				 if ( con != null) con.close();
+				 //사용한 자원을 finally 문을 이용해서 반납한다. 
+				 // 자원 반납은 사용했던 객체의 역순으로 하며 모두 공통적으로 
+				 // close()  메소드를 사용한다. 
+			 }catch(SQLException e){
+				 e.printStackTrace();
+			 }
+		 }
+			 }
+
+}
+//
+1개의 레코드가 삭제
+
+SQL> select deptno,dname,loc from dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+
+        50 인사           부산
+50번 삭제 
+
+
+===========================================
+
+2 DAO 및 DTO 패턴 
+
+데이터베이스를 연동하는 프로그램을 개발할 때 반드시 사용되는 2가지 
+개발 패턴으로 DAO 패턴과 DTO 패턴이 있다. 
+
+2.1 DAO(Data Access Object) 패턴 
+
+일반적으로 프로그램 개발은 GUI 화면에 보여 줄수 있는 데이터 관리를 위해서 
+데이터베이스를 사용해서 개발하게 된다. 가장 손쉽게 볼수 있는 것이 
+웹(Web)이다. 
+
+브라우저에서 보이는 것처럼 GUI 화면을 구성하는 코드를 'Presentation Logic'
+이라고 하며, GUI 화면에 데이터를 보여주기 위해서 데이터베이스를 검색하는 
+코드 및 GUI 화면에서 새로 발생한 데이터(예를 들면 회원가입)를 데이터베이스
+에 저장하는 코드와 같은 실제적인 작업을 하는 코드를 'Business Logic' 이라고 한다. 
+
+'Presentation Logic'과 'Business Logic'을 하나의 클래스로 모두 구현할 수도 
+있고 여러 클래스로 모듈화해서 구현할 수도 있다. 하나의 클래스로 만들면 
+유지보수가 어려워지기 때문에 바람직하지 않다. 
+
+예를 들어 2개의 로직이 하나의 클래스 파일에 저장되면 화면(Presentation Logic)을 
+변경하거나 또는 Business logic 이 변경될 때 복잡한 코드 때문에 유지보수가 
+어려워진다.  따라서 두가지 영역을 모듈화하여 개발한다. 
+
+모듈화한 클래스들 중에서 데이터베이스 접근하는 코드만을 관리하는 클래스를 
+DAO 클래스라고 한다. 이렇게 DAO 클래스를 사용해서 개발하는 것이 보편화 
+되었기 때문에 DAO 패턴이라고 부른다. 
+
+일반적으로 DAO 클래스는 테이블마다 한 개씩 생성해서 사용한다. DAO 클래스
+안에는 특정 테이블에서 수행할 작업을 메소드로 정의해서 구현하며 
+Presentation Logi 에서는 DAO 클래스의 메소드를 호출하면서 원하는 작업을 
+구현하게 된다. 
+
+2.2 DTO (Data Transfer Object ) 패턴 
+
+Presentation Logic 과 Business Logic 을 여러 클래스로 분리해서 
+작업은 하지만 서로간에 긴밀한 관계가 유지되면서 작업이 이루어진다. 
+Presentation Logic 에서 보여줄 데이터를 얻기 위해서 Business Logic에 
+요청하면 Business Logic은 필요한 데이터를 데이터베이스 검색해서 
+Presentation Logic 에게 결과를 반화하는 작업 등을 하게 된다. 
+
+이렇게 데이터를 다른 Logic 에게 전송 및 반환할 때 효율적으로 데이터를 사용 
+할수 있게 클래스를 작성할 수 있는데 이 클래스를 DTO 클래스라고 한다. 
+이름 그대로 데이터를 전송할 때 사용되는 클래스이다. DTO 클래스를 사용하면 
+데이터를 전송할 때와 전송된 데이터를 얻어서 사용할 때 
+효율적으로 사용할수 있는 장점이다. 
+
+다음과 같은 구조 DAO ,DTO 패턴을 사용할수 있다. 
+
+presentation logic -> business logic 
+1.데이터 검색 ->DAO , DTO-> 오라클
+2.데이터 저장 ->DAO , DTO-> 오라클
+3.데이터 삭제 ->DAO , DTO-> 오라클
+4.데이터 수정 ->DAO , DTO-> 오라클
+
+실습하기 14-5 
+
+DAO  패턴을 이용한 레코드 검색하기 
+
+다음은 dept 테이블에 저장된 레코드를 검색하는 자바 프로그램 예제.
+
+Presentation Login 을 담당하는 Ex_DTO 클래스와 DAO 패턴을 적용한 
+'Ex_DAO'  클래스 그리고 DTO 패턴을 적용한 'Ex_DTO' 클래스를 작성한다. 
+'Ex_DTO' 클래스는 실제로 GUI 화면 코드를 작성해야 하지만 실습 관계상 
+모두 생략하고 main 메소드만을 지정한다. 새 클래스를 추가하는 방법으로 
+3개의 클래스를 현재 프로젝트에 추가한다. 
+
+dept 테이블의 칼럼 데이터를 관리하기 위한 용도로 'Ex_DTO' 클래스를 작성.
+일반적으로 테이블의 테이터는 레코드 단위로 처리하기 때문에 레코드 전체를 
+저장할수 있는 클래스를 작성하면 레코드를 생성하거나 수정, 삭제 또는 검색할 때 
+효율적인 데이터 관리를 할수 있다. 
+이런 장점을 취한 클래스를 DTO 클래스라고 한다. 
+일반적으로 DTO 클래스는 필요한 인스턴스 변수와 인스턴스 변수의 값을 
+읽거나 설정하기 위한 Getter/Setter 메소드로 구성된다. 
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_Ex_DTO
+
+package ch14.JDBC;
+
+public class JDBC_Ex_DTO {
+
+	int deptno;  // dept 테이블의 칼럼을 저장하기 위한 인스턴스 변수를 정의.
+	String dname;
+	String loc;
+	
+	public JDBC_Ex_DTO(int deptno, String dname, String loc) {
+		this.deptno = deptno;
+		this.dname = dname;
+		this.loc = loc;
+	}
+	public JDBC_Ex_DTO() {}
+
+	public int getDeptno() { // 인스턴스 변수에 값을 설정하는 Setter 메소드와 인스턴스 변수의 값을
+		// 읽어 오는 Getter 메소드를 정의.
+		return deptno;
+	}
+
+	public void setDeptno(int deptno) {
+		this.deptno = deptno;
+	}
+
+	public String getDname() {
+		return dname;
+	}
+
+	public void setDname(String dname) {
+		this.dname = dname;
+	}
+
+	public String getLoc() {
+		return loc;
+	}
+
+	public void setLoc(String loc) {
+		this.loc = loc;
+	}
+
+}
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_Ex_DAO
+
+package ch14.JDBC;
+import java.util.ArrayList; //public class ArrayList<E> extends AbstractList<E>
+import java.sql.*;
+
+public class JDBC_Ex_DAO {
+	 String driver = "oracle.jdbc.driver.OracleDriver";   // 6행 ~ 9행 데이터베이스 접속을 위한 4가지 정보를 String  변수에  저장.
+	 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+	 String userid = "hr2";
+	 String passwd = "1234";
+	 public JDBC_Ex_DAO() {
+		 try {
+		 Class.forName(driver);  //드라이버를 로딩하는 초기화 작업을 생성자에서 구현한다.
+	 }catch(ClassNotFoundException e) { e.printStackTrace();}
+	 }
+	 public ArrayList<JDBC_Ex_DTO>select(){
+	   ArrayList<JDBC_Ex_DTO> list = new ArrayList<JDBC_Ex_DTO>();
+	  Connection con = null;
+	  PreparedStatement pstmt = null;
+	  ResultSet rs = null;
+	 
+	 try {
+		 con = DriverManager.getConnection(url, userid, passwd); 
+		 // DriverManager 클래스의 getConnection() 메소드를 
+		 //이용해서 Connection 객체를 얻는다. 
+		 String query = "SELECT deptno,dname,loc FROM dept"; 
+		 //요청할 SQL  문을 String 변수에 저장한다.
+		 pstmt =con.prepareStatement(query); 
+		 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+		 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻는다. 
+		 rs = pstmt.executeQuery(); 
+		 //SELECT 문을 요청하기 때문에 executeQuery() 메소드를 사용하며 
+		 //결과는 ResultSet 객체로 받는다.
+		 while(rs.next()) {
+		JDBC_Ex_DTO dto = new JDBC_Ex_DTO(); 
+		// 각각의 레코드 정보를 JDBC_Ex_DTO 클래스의 객체에 저장한다. 
+		dto.setDeptno(rs.getInt("deptno"));
+		dto.setDname(rs.getString("dname"));
+		dto.setLoc(rs.getString("loc"));
+		list.add(dto); // 저장된 JDBC_Ex_DTO 클래스의 객체를 누적시키기 위해서 
+		// ArrayList 객체 저장한다. while 문이 모두 실행된 후에는 dept 테이블의 모든 레코드가 
+		// ArrayList 의 객체에 모두 저장된다. 
+		 }
+	 }catch(Exception e) {
+		 e.printStackTrace();
+	 }finally {
+		 try {
+			 if (rs != null) rs.close();
+			 if (pstmt != null) pstmt.close();
+			 if ( con != null) con.close();
+		 }catch(SQLException e){
+			 e.printStackTrace();
+		 }
+	 }
+	 return list;
+		 }
+}
+
+Presentation Logic 역할을 하는 ''JDBC_Ex_Presentation_Logic"
+클래스를 작성한다. 
+이 클래스에서 DAO 클래스와 연동하면서 데이터 출력 및 데이터 
+저장, 수정, 삭제 작업 등을 구현할 수 있다. 
+
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_Ex_Presentation_Logic
+
+package ch14.JDBC;
+
+import java.util.ArrayList;
+
+public class JDBC_Ex_Presentation_Logic {
+	public static void main(String[] args) {
+	
+	JDBC_Ex_DAO dao = new JDBC_Ex_DAO(); 
+		//JDBC_Ex_DAO 클래스를 사용하기 위해서 객체 생성.
+
+		ArrayList<JDBC_Ex_DTO> list = dao.select(); 
+		// JDBC_Ex_DAO 클래스의 select 메소드 호출.
+		// 결과값으로는 dept 테이블의 모든 레코드를 저장하고 있는 
+		//ArrayList 객체를 리턴 받는다. 
+		
+				for(JDBC_Ex_DTO dto : list) {
+					int deptno = dto.getDeptno();
+					String dname = dto.getDname();
+					String loc = dto.getLoc();
+					System.out.println(deptno+"\t"+dname+"\t"+loc);
+				} //for ~ each 문을 이용해서 ArrayList 에 저장된 레코드의 값을 출력한다. 
+				
+
+	}
+
+}
+//
+10	ACCOUNTING	NEW YORK
+20	RESEARCH	DALLAS
+30	SALES	CHICAGO
+40	OPERATIONS	BOSTON
+
+SQL> SELECT deptno,dname,loc FROM dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+
+===============================
+
+3 Connection Pool 기능 
+
+데이터베이스를 연동할 때 적용 가능한 2가지 패터인 
+DAO 와 DTO 패턴을 살펴봄. 
+추가로 데이터베이스를 연동할 때 성능 향상을 위해서 
+Connection Pool 기능을 사용 할수 있다. 
+
+데이터베이스 연동은 프로그램과 데이터베이스를 연결하기 위해 
+Connection을 맺는 작업이 필수 이며, 이러한 연결은 반드시 
+'Thread-safe'로 작업이 이루어지도록 고려해야 한다. 
+
+'Thread-safe' 는 하나의 Connection으로 여러 사용자가 사용하지 못하도록 
+구현해야 하는 방법이다. 하나의 Connection으로 여러 사용자가 사용하면 
+원하지 않는 결과가 나올수 있기 때문이다. 
+
+또한, Connection 을 맺는 작업이 많은 시간이 소모되는 작업이기 때문에 
+데이터베이스와 연동할 때 소모되는 시간을 대부분을 소비하게 된다. 
+이러한 문제점 때문에 필요할 때마다 Connection을 맺어서 사용하지 않고 
+미리 Connection을 일정한 수만큼 맺어 놓고 필요할 때 빌려서 
+사용하는 방법을 생각할수 있다. 
+
+미리 Connection을 맺어서 보관하는 기능을 제공하는 클래스를 ConnectionPool
+클래스라고 한다. DAO 클래스에서 ConnectionPool 클래스에 저장된 
+Connection을 이용해서 원하는 작업을 하고 사용 후에는 ConnectionPool에 
+Connection을 돌려주는 작업을 한다. 만약 돌려주지 않으면 ConnectionPool
+클래스에 저장된 Connection 을 모두 소비하기 때문에 더는 Connection을 
+사용할수 없게 된다. 
+
+이런 기능을 제공하는 ConnectionPool 클래스를 직접 작성해서 사용할수 도 
+있지만, 자바 개발자들이 손쉽게 사용할수 있도록 Apache 그룹에서 만들어 
+무로료 배포하는 API 파일을 일반적으로 사용한다. 
+
+다음은 Apach 그룹에서 배포한 ConnectionPool 기능을 포함하는 API를 사용하는 
+방법이다. 모두 3개의 zip 파일을 다운로드해야 한다. 
+
+http://jakarta.apache.org
+!
+1 다음의 Apache 사이트에 접속하여 왼쪽 메뉴 중에서 
+Commons  선택 .
+
+2  내용중 DBCP 링크 선택 
+
+3 아래에 다운로드 링크 선택 
+
+4 commons-dbcp2-2.1.1-bin.zip 파일 다운로드 
+
+5. 다시 Commons에서 Pool 링크 선택 
+
+6. 다운. Commons Pool 2.6.2
+
+7. 다시 Commons에서 Logging 링크 선택 
+
+8.  Commons Logging 1.2 다운. 
+
+9. 각 파일을 압축 해제후, 이클립스 클래스 패스에 추가. 
+Build path -> Configure Build Path 선택. 
+Java Build Path - Libraries - Add External JARs... 를 선택. 
+
+3개 파일 추가. 
+
+10 . 사이트의 예제 파일 보기 
+ BasicDataSourceExample.java
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import javax.sql.DataSource;
+
+//
+// Here are the dbcp-specific classes.
+// Note that they are only used in the setupDataSource
+// method. In normal use, your classes interact
+// only with the standard JDBC API
+//
+import org.apache.commons.dbcp2.BasicDataSource;
+
+//
+// Here's a simple example of how to use the BasicDataSource.
+//
+
+//
+// Note that this example is very similar to the PoolingDriver
+// example.
+
+//
+// To compile this example, you'll want:
+//  * commons-pool-2.3.jar
+//  * commons-dbcp-2.1.jar 
+// in your classpath.
+//
+// To run this example, you'll want:
+//  * commons-pool-2.3.jar
+//  * commons-dbcp-2.1.jar 
+//  * commons-logging-1.2.jar
+// in your classpath.
+//
+//
+// Invoke the class using two arguments:
+//  * the connect string for your underlying JDBC driver
+//  * the query you'd like to execute
+// You'll also want to ensure your underlying JDBC driver
+// is registered.  You can use the "jdbc.drivers"
+// property to do this.
+//
+// For example:
+//  java -Djdbc.drivers=org.h2.Driver \
+//       -classpath commons-pool2-2.3.jar:commons-dbcp2-2.1.jar:commons-logging-1.2.jar:h2-1.3.152.jar:. \
+//       BasicDataSourceExample \
+//       "jdbc:h2:~/test" \
+//       "SELECT 1"
+//
+public class BasicDataSourceExample {
+
+    public static void main(String[] args) {
+        // First we set up the BasicDataSource.
+        // Normally this would be handled auto-magically by
+        // an external configuration, but in this example we'll
+        // do it manually.
+        //
+        System.out.println("Setting up data source.");
+        DataSource dataSource = setupDataSource(args[0]);
+        System.out.println("Done.");
+
+        //
+        // Now, we can use JDBC DataSource as we normally would.
+        //
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rset = null;
+
+        try {
+            System.out.println("Creating connection.");
+            conn = dataSource.getConnection();
+            System.out.println("Creating statement.");
+            stmt = conn.createStatement();
+            System.out.println("Executing statement.");
+            rset = stmt.executeQuery(args[1]);
+            System.out.println("Results:");
+            int numcols = rset.getMetaData().getColumnCount();
+            while(rset.next()) {
+                for(int i=1;i<=numcols;i++) {
+                    System.out.print("\t" + rset.getString(i));
+                }
+                System.out.println("");
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try { if (rset != null) rset.close(); } catch(Exception e) { }
+            try { if (stmt != null) stmt.close(); } catch(Exception e) { }
+            try { if (conn != null) conn.close(); } catch(Exception e) { }
+        }
+    }
+
+    public static DataSource setupDataSource(String connectURI) {
+        BasicDataSource ds = new BasicDataSource();
+        ds.setDriverClassName("org.h2.Driver");
+        ds.setUrl(connectURI);
+        return ds;
+    }
+
+    public static void printDataSourceStats(DataSource ds) {
+        BasicDataSource bds = (BasicDataSource) ds;
+        System.out.println("NumActive: " + bds.getNumActive());
+        System.out.println("NumIdle: " + bds.getNumIdle());
+    }
+
+    public static void shutdownDataSource(DataSource ds) throws SQLException {
+        BasicDataSource bds = (BasicDataSource) ds;
+        bds.close();
+    }
+}
+ 
+
+
+실습하기 14-6 
+Connection Pool 기능을 포함한 레코드 검색 
+
+dept 테이블의 칼럼 데이터를 관리하기 위한 용도로 PoolDTO 클래스를 
+작성한다. 클래스 이름은 "JDBC_PoolDTO"로하고, 패키지 경로를 
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_PoolDAO, JDBC_PoolDTO, 
+GUI 역할을 담당하는 JDBC_PoolTest
+데이터는 dept 테이블의 레코드를 출력함. 
+
+package ch14.JDBC;
+
+public class JDBC_PoolDTO {
+
+	int deptno; //5-8행 dept 테이블의 컬럼에 
+	//해당하는 인스턴스 변수를 선언한다.
+	String dname;
+	String loc;
+
+	public void setDeptno(int deptno) { //인스턴스 변수에 대한 Getter/Setter 메소드를 정의한다.  
+				this.deptno = deptno;
+	}
+	public void setDname(String dname) {
+		this.dname = dname;
+	}
+	public void setLoc(String loc) {
+		this.loc = loc;
+	}
+	
+	public int getDeptno() {
+		return deptno;
+	}
+	public String getDname() {
+		return dname;
+	}
+	public String getLoc() {
+		return loc;
+	}
+}
+
+데이터베이스에 접근하여 dept 테이블을 조작하기 위한 DTO 
+클래스를 작성한다. 
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_PoolDAO, JDBC_PoolDTO, 
+GUI 역할을 담당하는 JDBC_PoolTest
+
+JDBC_PoolDAO.java
+
+package ch14.JDBC;
+
+import java.util.ArrayList; //public class ArrayList<E> extends AbstractList<E>
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.apache.commons.dbcp2.BasicDataSource;
+
+
+public class JDBC_PoolDAO {
+ BasicDataSource ds;
+  public JDBC_PoolDAO() {
+	  ds = new BasicDataSource(); 
+	  //Connection Pool 기능과 Thread-safe 기능을 갖춘 BasicDataSource
+	  // 클래스의 객체를 생성한다. 이 클래스는 이클립스에 추가한 
+	  //commons-dbcp-2.x.jar에 내장된 API이다. 
+	  
+	  ds.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+	  ds.setUrl("jdbc:oracle:thin:@1.252.62.38:11521:orcl");
+	  ds.setUsername("hr2");
+	  ds.setPassword("1234"); 
+	  // BasicDataSource 클래스의 객체에서 데이터베이스에 연결할 때
+	  // 필요한 4가지 정보를 설정. 
+	  
+	  ds.setInitialSize(4); 
+	  // setInitialSize() 메소드를 이용해서 Connection Pool에 초기값으로 
+	  //4개의 Connection을 가질수 있도록 설정한다. 이 4개의 Connection 을 공유하면서
+	  // 사용할수 있다.
+  }
+		 public ArrayList<JDBC_PoolDTO>select(){
+		   ArrayList<JDBC_PoolDTO> list = new ArrayList<JDBC_PoolDTO>();
+		  Connection con = null;
+		  PreparedStatement pstmt = null;
+		  ResultSet rs = null;
+		  try {
+			 con = ds.getConnection(); // BasiceDataSource 의 객체에서 인자가 없는 
+			 // getConnection() 메소드를 이용해서 Connection 객체를 얻는다.
+			 // Pool에 저장되어 있던 Connection 객체가 반환된다. 
+			 
+			 String query = "SELECT deptno,dname,loc FROM dept"; 
+			 //요청할 SQL  문을 String 변수에 저장한다.
+			 
+			 pstmt =con.prepareStatement(query); 
+			 //SQL 문 전송에 필요한 PreparedStatement 객체를 
+			 //Connection 객체의 preparedStatement(sql)메소드를 이용해서 얻는다. 
+			 
+			 rs = pstmt.executeQuery(); 
+			 //SELECT 문을 요청하기 때문에 executeQuery() 메소드를 
+			 //사용하며 결과는 ResultSet 객체로 받는다.
+			 
+			 while(rs.next()) {
+			JDBC_PoolDTO dto = new JDBC_PoolDTO(); 
+			// 각각의 레코드 정보를 JDBC_Ex_DTO 클래스의 객체에 저장한다. 
+			
+			dto.setDeptno(rs.getInt("deptno"));
+			dto.setDname(rs.getString("dname"));
+			dto.setLoc(rs.getString("loc"));
+			list.add(dto); // 저장된 JDBC_Ex_DTO 클래스의 객체를 누적시키기 위해서 
+			// ArrayList 객체 저장한다. while 문이 모두 실행된 후에는 
+			//dept 테이블의 모든 레코드가 
+			// ArrayList 의 객체에 모두 저장된다. 
+			 }
+		 }catch(Exception e) {
+			 e.printStackTrace();
+		 }finally {
+			 try {
+				 if (rs != null) rs.close();
+				 if (pstmt != null) pstmt.close();
+				 if ( con != null) con.close();
+			 }catch(SQLException e){
+				 e.printStackTrace();
+			 }
+		 }
+		 return list;
+			 }
+	}
+
+Presentation Logic 의 역할로 PoolTest 클래스를 작성.
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 : JDBC_PoolDAO, JDBC_PoolDTO, 
+GUI 역할을 담당하는 JDBC_PoolTest
+
+JDBC_PoolTest
+package ch14.JDBC;
+
+import java.util.ArrayList;
+
+public class JDBC_PoolTest {
+	public static void main(String[] args) {
+      JDBC_PoolDAO dao = new JDBC_PoolDAO(); 
+	  //JDBC_PoolDAO 클래스를 사용하기 위해서 객체를 생성. 
+	  
+      ArrayList<JDBC_PoolDTO> list = dao.select();
+      // JDBC_PoolDAO 클래스 객체의 select() 메소드를 호출한다. 
+      // 결과값으로 dept 테이블의 모든 레코드를 저장하고 있는 
+      // ArrayList 객체를 리턴받는다. 
+	  
+      for(JDBC_PoolDTO dto : list) {
+    	  // 향상된 for 문을 이용해서 ArrayList 객체에 저장된 레코드의 값을 출력 한다. 
+    	  int deptno = dto.getDeptno();
+    	  String dname = dto.getDname();
+    	  String loc = dto.getLoc();
+    	  System.out.println(deptno + " "+ dname+ " "+ loc);
+      }
+
+	}
+
+}
+//
+10 ACCOUNTING NEW YORK
+20 RESEARCH DALLAS
+30 SALES CHICAGO
+40 OPERATIONS BOSTON
+
+
+SQL> SELECT deptno,dname,loc FROM dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+
+======================================
+4 메타 데이터 
+
+일반적으로 메타 데이터(Meta Data) 라고 하면 실제 데이터를 관리하는데 
+필요한 추가적인 데이터를 의미한다. 예를 들어 부서번호, 부서명 데이터를 
+저장하는데 필요한 추가 데이터는 데이터베이스 정보, 데이블 정보, 
+컬럼 정보 등이 필요하다. 이러한 데이터를 메타 데이터라고 한다. 
+
+JDBC 에서는 이런 메타 데이터를 얻을 수 있는 2가지 API를 제공한다. 
+
+(1) DatabaseMetaData API 
+데이터베이스 이름, 버전, 드라이버명, url 등과 같이 데이터베이스와 
+관련된 메타 데이터를 얻을 수 있다. 
+
+(2) ResultSetMetaData API 
+테이블명, 컬럼 개수, 컬럼명, 데이터형 등과 같이 테이블과 
+관련된 메타 데이터를 얻을수 있다. 
+
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 :  JDBC_Meta
+
+package ch14.JDBC;
+
+import java.sql.*;
+
+public class JDBC_Meta {
+	public static void main(String[] args) {
+
+		 String driver = "oracle.jdbc.driver.OracleDriver";   
+		 // 12행 ~ 15행 데이터베이스 접속을 위한 4가지 정보를 String  변수에  저장.
+		 
+		 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+		 String userid = "hr2";
+		 String passwd = "1234";
+		 Connection con = null;
+		 try {
+			 Class.forName(driver);  
+			 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+			 
+			 con = DriverManager.getConnection(url, userid, passwd); 
+			 // DriverManager 클래스의 getConnection() 메소드를 이용해서 
+			 //Connection 객체를 얻는다. 
+			 
+			DatabaseMetaData data = con.getMetaData();
+			
+			System.out.println(data.getDatabaseProductName());
+			System.out.println(data.getDatabaseProductVersion());
+			System.out.println(data.getDriverName());
+			System.out.println(data.getURL());
+			
+			ResultSet rs = data.getSchemas();
+			
+			 while(rs.next()) {
+					 System.out.println("계정명 : "+rs.getString(1));
+			 }
+		 }catch(Exception e) {
+			 e.printStackTrace();
+		 }finally {
+			 try {
+				  if ( con != null) con.close();
+			 }catch(SQLException e){
+				 e.printStackTrace();
+			 }
+		 }
+	}
+}
+//
+Oracle
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+Oracle JDBC driver
+jdbc:oracle:thin:@1.252.62.38:11521:orcl
+계정명 : ANONYMOUS
+계정명 : APPQOSSYS
+계정명 : AUDSYS
+계정명 : CTXSYS
+계정명 : DBSFWUSER
+계정명 : DBSNMP
+계정명 : DIP
+계정명 : DVF
+계정명 : DVSYS
+계정명 : GGSYS
+계정명 : GSMADMIN_INTERNAL
+계정명 : GSMCATUSER
+계정명 : GSMUSER
+계정명 : HR2
+계정명 : LBACSYS
+계정명 : MDDATA
+계정명 : MDSYS
+계정명 : OJVMSYS
+계정명 : OLAPSYS
+계정명 : ORACLE_OCM
+계정명 : ORDDATA
+계정명 : ORDPLUGINS
+계정명 : ORDSYS
+계정명 : OUTLN
+계정명 : REMOTE_SCHEDULER_AGENT
+계정명 : SI_INFORMTN_SCHEMA
+계정명 : SPATIAL_CSW_ADMIN_USR
+계정명 : SYS
+계정명 : SYS$UMF
+계정명 : SYSBACKUP
+계정명 : SYSDG
+계정명 : SYSKM
+계정명 : SYSRAC
+계정명 : SYSTEM
+계정명 : WMSYS
+계정명 : XDB
+계정명 : XS$NULL
+
+		
+ -프로젝트 이름 : JAVA_CH14_JDBC
+-패키지 경로: ch14.JDBC 
+-클래스 이름 :  JDBC_RSMeta
+
+package ch14.JDBC;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class JDBC_RSMeta {
+	 public static void main(String[] args) {
+		 String driver = "oracle.jdbc.driver.OracleDriver";   
+		 // 12행 ~ 15행 데이터베이스 접속을 위한 4가지 정보를 String  변수에  저장.
+		 
+		 String url = "jdbc:oracle:thin:@1.252.62.38:11521:orcl";
+		 String userid = "hr2";
+		 String passwd = "1234";
+		 Connection con = null;
+		 PreparedStatement pstmt = null;
+		 ResultSet rs = null;
+		 try {
+			 Class.forName(driver);  
+			 //명시된 드라이버 클래스를 메모리에 로딩한다. 
+			 
+			 con = DriverManager.getConnection(url, userid, passwd); 
+			 // DriverManager 클래스의 getConnection() 메소드를 이용해서 
+			 //Connection 객체를 얻는다. 
+			 
+			String query = "SELECT * FROM dept"; 
+			// dept  테이블을 SELECT 하는 SQL 문 작성. 
+			
+			pstmt = con.prepareStatement(query);
+			rs = pstmt.executeQuery(); 
+			// ResultSet  객체에서 테이블의 메타 정보를 얻을 수 있는 
+			//ResultSetMetaData  객체를 얻는다. 
+			
+			ResultSetMetaData data = rs.getMetaData();					
+			
+			System.out.println(data.getColumnCount());
+			System.out.println(data.getColumnName(1));
+			System.out.println(data.getColumnName(2));
+			System.out.println(data.getColumnTypeName(1));
+			
+			// ResultSetMetaData 객체의 메소드를 이용해서 컬럼 개수, 컬러명,
+			// 데이터형 등의 메타 정보를 얻는다. 
+			
+		 }catch(Exception e) {
+			 e.printStackTrace();
+		 }finally {
+			 try {
+				  if ( rs != null) rs.close();
+				  if ( pstmt != null) pstmt.close();
+				  if ( con != null) con.close();
+			 }catch(SQLException e){
+				 e.printStackTrace();
+			 }
+		 }
+		}
+
+}
+//
+3
+DEPTNO
+DNAME
+NUMBER
+
+ 
+SQL> SELECT * FROM dept;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO

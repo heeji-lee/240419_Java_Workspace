@@ -12,7 +12,7 @@ import javax.swing.JButton;
 // ActionListener, 구성품이 , 추상 메서드가 하나인 인터페이스: 함수형 인터페이스, 
 // 언제 활용이 되나요? 람다식(화살표 함수 사용시) 이용이 됨. 
 
-public class MyActionListener implements ActionListener{
+public class MyActionListener implements ActionListener {
 
 	// 작업순서2, 재정의
 	@Override
