@@ -23,9 +23,9 @@ import javax.swing.table.DefaultTableModel;
 import miniProject.dao.ServiceDB;
 
 public class Main extends JFrame {
-	
-	private boolean isLogin = false;
-	
+   
+   private boolean isLogin = false;
+   
     public Main() {
         setTitle("메인화면");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -55,24 +55,24 @@ public class Main extends JFrame {
         // 버튼을 클릭했을 때 이벤트
         joinBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-            	JTextField idField = new JTextField(10);
-        	    JPasswordField passwordField = new JPasswordField(10);		
-        	    
-        	    JPanel signUpPanel = new JPanel();
-        	    signUpPanel.add(new JLabel("아이디:"));
-        	    signUpPanel.add(idField);
-        	    signUpPanel.add(new JLabel("비밀번호:"));
-        	    signUpPanel.add(passwordField);
-        	    
-        	    Object[] options = {"가입", "취소"};
-        	    int result = JOptionPane.showOptionDialog(null, signUpPanel, "회원가입", JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-        	    
-        	    if (result == JOptionPane.OK_OPTION) {
-        	    	String id = idField.getText();
-        			String password = new String(passwordField.getPassword());
-        			ServiceDB serviceDB = new ServiceDB();
-        			serviceDB.admin_join(id, password);
-        	    }
+               JTextField idField = new JTextField(10);
+               JPasswordField passwordField = new JPasswordField(10);      
+               
+               JPanel signUpPanel = new JPanel();
+               signUpPanel.add(new JLabel("아이디:"));
+               signUpPanel.add(idField);
+               signUpPanel.add(new JLabel("비밀번호:"));
+               signUpPanel.add(passwordField);
+               
+               Object[] options = {"가입", "취소"};
+               int result = JOptionPane.showOptionDialog(null, signUpPanel, "회원가입", JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+               
+               if (result == JOptionPane.OK_OPTION) {
+                 String id = idField.getText();
+                 String password = new String(passwordField.getPassword());
+                 ServiceDB serviceDB = new ServiceDB();
+                 serviceDB.admin_join(id, password);
+               }
             }
         });
         panel.add(joinBtn);
@@ -92,7 +92,7 @@ public class Main extends JFrame {
         loginBtn.setHorizontalTextPosition(SwingConstants.CENTER);
         loginBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	JTextField idField = new JTextField(10);
+               JTextField idField = new JTextField(10);
                 JPasswordField passwordField = new JPasswordField(10);
 
                 JPanel loginPanel = new JPanel();
@@ -103,10 +103,10 @@ public class Main extends JFrame {
                 
                 int result = JOptionPane.showOptionDialog(null, loginPanel, "로그인", JOptionPane.OK_OPTION,JOptionPane.PLAIN_MESSAGE, null, new String[]{"로그인"}, "로그인");
                 if (result == JOptionPane.OK_OPTION) {
-                	String id = idField.getText();
-        			String password = new String(passwordField.getPassword());
-        			ServiceDB serviceDB = new ServiceDB();
-        			isLogin = serviceDB.admin_login(id, password);
+                   String id = idField.getText();
+                 String password = new String(passwordField.getPassword());
+                 ServiceDB serviceDB = new ServiceDB();
+                 isLogin = serviceDB.admin_login(id, password);
                 }
             }
         });
@@ -127,87 +127,60 @@ public class Main extends JFrame {
         memberBtn.setHorizontalTextPosition(SwingConstants.CENTER);
         memberBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	if(isLogin) {
-            		JTable table;
-            		DefaultTableModel model; // DfaultTableModel이 같이 필요함
-            		
-            		String header[] = { "도서 번호", "도서명", "출판사", "저자명", "도서가격", "카테고리" };
-            		String categoryNames[] = { "IT도서", "소설", "비도서", "경제", "사회" };
-            		public Book_DB db = new Book_DB();
+               if(isLogin) {
+                  JTable table;
+                  DefaultTableModel model; // DfaultTableModel이 같이 필요함
+                  
+                  String header[] = { "도서 번호", "도서명", "출판사", "저자명", "도서가격", "카테고리" };
 
-            		// 패널 선언
-            		JPanel p;
-            		JLabel bookid[] = new JLabel[header.length]; // 참조형 변수 선언
-            		JTextField tf[] = new JTextField[header.length - 1]; // JTextfield 5개 필요 카테고리 하나 빼서
+                  // 패널 선언
+                  JPanel p;
+                  JLabel bookid[] = new JLabel[header.length]; // 참조형 변수 선언
+                  JTextField tf[] = new JTextField[header.length - 1]; // JTextfield 5개 필요 카테고리 하나 빼서
 
-            		setLayout(new BorderLayout());
+//                  p.setLayout(new BorderLayout());
 
-            		p = new JPanel();
-            		p.setLayout(new GridLayout(4, 4)); // 하단에 정렬하기 위해 grid 사용
+                  p = new JPanel();
+                  p.setLayout(new GridLayout(4, 4)); // 하단에 정렬하기 위해 grid 사용
 
-            		for (int i = 0; i < header.length; i++) {
-            		bookid[i] = new JLabel(header[i]);
-            		p.add(bookid[i]); // 구역이 나눠진 p에 라벨 넣기
-            		if (i < header.length - 1) {
-            		tf[i] = new JTextField();
-            		p.add(tf[i]);
-            		}
-            		}
-            		// 도서추가 앞에 빈칸 3개 추가 (버튼 나중에 추가)
-            		for (int i = 0; i < 2; i++) {
-            		p.add(new JLabel(" "));
-            		}
-            		
-            		//JTable 관련 메소드
-            		model = new DefaultTableModel(header, bookList.size()) { // 편집이 됨
-            		// isCell 단축키
-            		@Override
-            		public boolean isCellEditable(int row, int column) { // 패널에 저장되어 있는
-            		return false; // 편집안됨
-            		}
-            		};
-            		// 컬럼들의 너비 설정
-            		table = new JTable(model);
-            		table.getColumnModel().getColumn(0).setPreferredWidth(50);
-            		table.getColumnModel().getColumn(1).setPreferredWidth(200);
-            		table.getColumnModel().getColumn(2).setPreferredWidth(100);
-            		table.getColumnModel().getColumn(4).setPreferredWidth(50);
-            		table.getColumnModel().getColumn(5).setPreferredWidth(50);
+                  for (int i = 0; i < header.length; i++) {
+                  bookid[i] = new JLabel(header[i]);
+                  p.add(bookid[i]); // 구역이 나눠진 p에 라벨 넣기
+                  if (i < header.length - 1) {
+                  tf[i] = new JTextField();
+                  p.add(tf[i]);
+                  }
+                  }
+                  // 도서추가 앞에 빈칸 3개 추가 (버튼 나중에 추가)
+                  for (int i = 0; i < 2; i++) {
+                  p.add(new JLabel(" "));
+                  }
+                  
+                  //JTable 관련 메소드
+                  model = new DefaultTableModel(header, 6) { // 편집이 됨
+                  // isCell 단축키
+                  @Override
+                  public boolean isCellEditable(int row, int column) { // 패널에 저장되어 있는
+                  return false; // 편집안됨
+                  }
+                  };
+                  // 컬럼들의 너비 설정
+                  table = new JTable(model);
+                  table.getColumnModel().getColumn(0).setPreferredWidth(50);
+                  table.getColumnModel().getColumn(1).setPreferredWidth(200);
+                  table.getColumnModel().getColumn(2).setPreferredWidth(100);
+                  table.getColumnModel().getColumn(4).setPreferredWidth(50);
+                  table.getColumnModel().getColumn(5).setPreferredWidth(50);
 
-            		// 스크로바 만들기
-            		JScrollPane scroll = new JScrollPane(table);
+                  // 스크로바 만들기
+                  JScrollPane scroll = new JScrollPane(table);
 
-            		putResult();
+                  add("Center", scroll); // 위치 순서 상관없음
+                  add("South", p);
 
-            		add("Center", scroll); // 위치 순서 상관없음
-            		add("South", p);
-
-            		}
-
-            		public BookDTO InsertData() {
-            		BookDTO vo = new BookDTO();
-            		vo.setBookid(Integer.parseInt(tf[0].getText()));
-            		vo.setBookName(tf[1].getText());
-            		vo.setPublish(tf[2].getText());
-            		vo.setAuthor(tf[3].getText());
-            		vo.setPrice(Integer.parseInt(tf[4].getText()));
-            		vo.setCategory((String) categoryCombo.getSelectedItem());
-            		//DB에 삽입
-            		db.insertbook(vo);
-            		return vo;
-            		}
-
-            		public void initInsertData() {
-            		for (int i = 0; i < tf.length; i++) {
-            		tf[i].setText("");
-            		}
-            		categoryCombo.setSelectedIndex(0);
-            		}
-            		}
-            		
-            	} else {
-            		JOptionPane.showMessageDialog(null, "로그인이 필요합니다.");
-            	}
+               } else {
+                  JOptionPane.showMessageDialog(null, "로그인이 필요합니다.");
+               }
             }
         });
         panel.add(memberBtn);
@@ -227,7 +200,7 @@ public class Main extends JFrame {
         productBtn.setHorizontalTextPosition(SwingConstants.CENTER);
         productBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	
+               
             }
         });
         panel.add(productBtn);
@@ -242,4 +215,3 @@ public class Main extends JFrame {
         new Main();
     }
 }
-
